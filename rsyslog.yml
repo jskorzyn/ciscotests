@@ -1,0 +1,27 @@
+---
+- name: Checking and enforcing rsyslog configuration
+  hosts: rtr1
+  gather_facts: false
+
+  vars_files:
+    - ./config_files/rsyslog_config.yml
+
+  tasks:
+    - name: "Use cisco.ios.ios_logging_global for gather o change rsyslog settings"
+      cisco.ios.ios_logging_global:
+        config:
+          hosts:
+            - host: "{{ rsyslog_server_01 }}"
+            - host: "{{ rsyslog_server_02 }}"
+        state: gathered
+      register: rsyslog_results
+    
+    - name: Show module result
+      debug:
+        var: rsyslog_results.gathered.hosts[0].host
+
+    - name: fail playbook when log hosts are different
+      fail: 
+        msg: "Rsyslog Config Different from config template"
+      when: rsyslog_results.gathered.hosts[0].host != rsyslog_server_01 or rsyslog_results.gathered.hosts[1].host  != rsyslog_server_02
+
